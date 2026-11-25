@@ -35,6 +35,15 @@ atención y los SLA se incorporarán en fases posteriores.
 - Los filtros combinados se aplican conjuntamente. El orden se resuelve antes de
   paginar y siempre se desempata por identificador ascendente.
 - Las páginas comienzan en 1; el tamaño predeterminado es 20 y el máximo es 100.
+- En el cuerpo JSON de creación, `client_id` es un entero positivo;
+  `category`, `priority` y `description` son cadenas. Los cuatro campos tienen
+  tipos estrictos: no admiten `null` ni conversiones automáticas de tipos.
+- El listado admite únicamente estos parámetros de consulta: `client_id`,
+  `category`, `priority`, `created_from`, `created_to`, `sort_by`,
+  `sort_direction`, `page` y `page_size`. Cada uno admite una sola ocurrencia.
+- La lista vacía de R27 corresponde a solicitudes válidas. Un filtro por cliente
+  inexistente usado por soporte se rechaza según R29. Para un cliente que filtre
+  por otro identificador, se mantiene la denegación de R20, exista o no ese cliente.
 
 ## Historias de usuario
 
@@ -86,6 +95,15 @@ Todas las historias siguientes desarrollan MDA-1:
   único y una fecha de creación, y devolverlos junto con los cuatro campos y los
   valores iniciales de estado, asignación y nivel.
 
+- **R31.** SI una identidad autorizada envía al crear un ticket `null` o un tipo
+  incorrecto en cualquiera de los cuatro campos, o un `client_id` que no sea un
+  entero positivo, ENTONCES el sistema DEBERÁ rechazar la creación con HTTP 422,
+  indicar los campos inválidos y no registrar el ticket, sin convertir tipos
+  automáticamente. Las cadenas numéricas, los decimales y los booleanos no son
+  identificadores de cliente válidos; los números, booleanos, objetos y listas
+  no son cadenas válidas. Los objetos y listas tampoco son identificadores
+  válidos. Los valores del tipo correcto siguen sujetos a R8 y R9.
+
 ### Consulta por identificador
 
 - **R12.** CUANDO un cliente autenticado consulte un ticket de su propio cliente,
@@ -123,6 +141,15 @@ Todas las historias siguientes desarrollan MDA-1:
   catálogo, una fecha no es válida, el límite desde es posterior al límite hasta,
   o el campo o sentido de orden no está admitido, ENTONCES el sistema DEBERÁ rechazar
   el listado e informar el parámetro inválido.
+
+- **R29.** SI un agente de soporte autenticado filtra el listado por un
+  identificador de cliente inexistente, ENTONCES el sistema DEBERÁ rechazar la
+  solicitud con HTTP 422, indicar `client_id` como parámetro inválido y no devolver
+  datos de tickets.
+- **R30.** SI una identidad autorizada envía en el listado un parámetro de
+  consulta no admitido o repite uno de los parámetros, incluso con valores
+  iguales, ENTONCES el sistema DEBERÁ rechazar la solicitud con HTTP 422, indicar
+  los parámetros inválidos y no devolver datos de tickets.
 
 ### Paginación
 
